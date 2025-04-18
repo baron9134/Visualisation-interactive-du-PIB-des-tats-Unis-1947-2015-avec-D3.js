@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Graphique à barres D3 - GDP</title>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f7f7f7;
+        text-align: center;
+        margin: 40px;
+      }
+
+      svg {
+        background-color: white;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      #title {
+        font-size: 24px;
+        margin-bottom: 20px;
+      }
+
+      .bar {
+        fill: steelblue;
+      }
+
+      .bar:hover {
+        fill: darkorange;
+      }
+
+      #tooltip {
+        position: absolute;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        padding: 8px;
+        border-radius: 5px;
+        font-size: 14px;
+        pointer-events: none;
+        visibility: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 id="title">Produit Intérieur Brut des États-Unis (1947-2015)</h1>
+    <div id="tooltip"></div>
+    <svg width="900" height="500"></svg>
+
+    <script>
+      const url =
+        'https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/GDP-data.json';
+
+      const svg = d3.select('svg');
+      const width = +svg.attr('width');
+      const height = +svg.attr('height');
+      const margin = { top: 40, right: 30, bottom: 60, left: 80 };
+
+      const chartWidth = width - margin.left - margin.right;
+      const chartHeight = height - margin.top - margin.bottom;
+
+      const tooltip = d3.select('#tooltip');
+
+      fetch(url)
+        .then((response) => response.json())
+        .then((data) => {
+          const dataset = data.data;
+
+          const xScale = d3
+            .scaleTime()
+            .domain([new Date(dataset[0][0]), new Date(dataset[dataset.length - 1][0])])
+            .range([0, chartWidth]);
+
+          const yScale = d3
+            .scaleLinear()
+            .domain([0, d3.max(dataset, (d) => d[1])])
+            .range([chartHeight, 0]);
+
+          const xAxis = d3.axisBottom(xScale);
+          const yAxis = d3.axisLeft(yScale);
+
+          const chart = svg
+            .append('g')
+            .attr('transform', `translate(${margin.left},${margin.top})`);
+
+          // Axes
+          chart
+            .append('g')
+            .attr('id', 'x-axis')
+            .attr('transform', `translate(0,${chartHeight})`)
+            .call(xAxis);
+
+          chart.append('g').attr('id', 'y-axis').call(yAxis);
+
+          const barWidth = chartWidth / dataset.length;
+
+          // Bars
+          chart
+            .selectAll('.bar')
+            .data(dataset)
+            .enter()
+            .append('rect')
+            .attr('class', 'bar')
+            .attr('x', (d) => xScale(new Date(d[0])))
+            .attr('y', (d) => yScale(d[1]))
+            .attr('width', barWidth)
+            .attr('height', (d) => chartHeight - yScale(d[1]))
+            .attr('data-date', (d) => d[0])
+            .attr('data-gdp', (d) => d[1])
+            .on('mouseover', function (event, d) {
+              tooltip
+                .style('visibility', 'visible')
+                .style('left', event.pageX + 10 + 'px')
+                .style('top', event.pageY - 40 + 'px')
+                .attr('data-date', d[0])
+                .html(`<strong>${d[0]}</strong><br>$${d[1]} Billion`);
+            })
+            .on('mouseout', function () {
+              tooltip.style('visibility', 'hidden');
+            });
+        });
+    </script>
+  </body>
+</html>
